@@ -33,7 +33,8 @@ export function encode(input: string | Uint8Array) {
 
   const output = new Uint16Array(Math.ceil(input.length * 4 / 7) + 1)
   align(input, output, 8, 14, 0, 0x4e00)
-  output[output.length - 1] = input.length % 7 + 0x3d00
+  // output[output.length - 1] = input.length % 7 + 0x3d00
+  output[output.length - 1] = input.length % 7 + 0x9f00
   return output
 }
 
@@ -51,8 +52,35 @@ export function decode(input: string | Uint16Array) {
   }
 
   const length = input.length - 1
-  const residue = (input[length] - 0x3d00) || 7
+  // const residue = (input[length] - 0x3d00) || 7
+  const residue = (input[length] - 0x9f00) || 7
   const output = new Uint8Array(Math.floor((length - 1) / 4) * 7 + residue)
   align(input, output, 14, 8, 0x4e00, 0)
   return output
 }
+
+
+/**
+ * Usage:
+ * 
+ *  const _encoded = toCJK( encode( _SOURCE ) );
+ *  const _decoded = decode( convertCJKtoUint16Array ( _encoded ) );
+ * 
+ *  _SOURCE === _decoded
+ * 
+ */
+export const toCJK = (source: Uint16Array) :string => {
+  let result = '';
+  for (let i of source) {
+    result += String.fromCharCode(i);
+  }
+
+  return result;
+};
+
+export const convertCJKtoUint16Array = (source: string) :Uint16Array => {
+  return Uint16Array.from(
+    { length: source.length },
+    (_, idx) => source.charCodeAt(idx)
+  );
+};
